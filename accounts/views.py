@@ -1,0 +1,139 @@
+from rest_framework import generics
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from .serializers import ClienteRegistrationSerializer, PrestadorRegistrationSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+from .serializers import CustomTokenObtainPairSerializer
+from .models import PrestadorProfile
+from .serializers import PrestadorPublicoSerializer
+import math
+
+class ClienteRegistrationView(generics.CreateAPIView):
+    #Endpoint da API Cliente. Aceita apenas requisições POST.
+    serializer_class = ClienteRegistrationSerializer
+    permission_classes = [AllowAny]
+
+class PrestadorRegistrationView(generics.CreateAPIView):
+    #Endpoint da API Cliente. Aceita apenas requisições POST.
+    serializer_class = PrestadorRegistrationSerializer
+    permission_classes = [AllowAny]
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    #View personalizada para obtenção de token JWT
+    serializer_class = CustomTokenObtainPairSerializer
+
+# Fórmula matemática para cálculo de distância entre dois pontos (latitude/longitude)
+def calcular_distancia(lat1, lon1, lat2, lon2):
+    if not lat1 or not lon1 or not lat2 or not lon2:
+        return None
+
+    try:
+        lat1 = float(lat1)
+        lon1 = float(lon1)
+        lat2 = float(lat2)
+        lon2 = float(lon2)
+    except ValueError:
+        return None
+
+    # Raio da Terra em km
+    R = 6371.0
+
+    lat1_rad = math.radians(lat1)
+    lon1_rad = math.radians(lon1)
+    lat2_rad = math.radians(lat2)
+    lon2_rad = math.radians(lon2)
+
+    dlat = lat2_rad - lat1_rad
+    dlon = lon2_rad - lon1_rad
+
+    a = math.sin(dlat / 2)**2 + math.cos(lat1_rad) * math.cos(lat2_rad) * math.sin(dlon / 2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+
+    distance = R * c
+    return round(distance, 2)
+
+class PrestadorListView(generics.ListAPIView):
+    """
+    Endpoint público para buscar prestadores com filtros e ordenação por distância.
+    
+    Filtros:
+    ?servico=ID
+    ?categoria=ID
+    ?possui_material_proprio=true/false
+    ?disponibilidade=true/false
+    ?atende_fim_de_semana=true/false
+    
+    ?ordenar_por_distancia=true (latitude/longitude do cliente logado ou na URL)
+    """
+    serializer_class = PrestadorPublicoSerializer
+    permission_classes = [AllowAny]
+
+    def get_queryset(self):
+        queryset = PrestadorProfile.objects.all()
+
+        servico_id = self.request.query_params.get('servico')
+        categoria_id = self.request.query_params.get('categoria')
+        tem_material = self.request.query_params.get('possui_material_proprio')
+        disponibilidade = self.request.query_params.get('disponibilidade')
+        fim_de_semana = self.request.query_params.get('atende_fim_de_semana')
+
+        # Filtro por ID do Serviço
+        if servico_id:
+            queryset = queryset.filter(servicos__id=servico_id)
+
+        # Filtro por ID da Categoria
+        if categoria_id:
+            queryset = queryset.filter(servicos__categoria__id=categoria_id)
+
+        # Filtros de material, disponibilidade e fim de semana
+        if tem_material is not None:
+            valor = tem_material.lower() == 'true'
+            queryset = queryset.filter(possui_material_proprio=valor)
+            
+        if disponibilidade is not None:
+            valor = disponibilidade.lower() == 'true'
+            queryset = queryset.filter(disponibilidade=valor)
+            
+        if fim_de_semana is not None:
+            valor = fim_de_semana.lower() == 'true'
+            queryset = queryset.filter(atende_fim_de_semana=valor)
+
+        # Evita duplicatas
+        return queryset.distinct()
+    
+    def list(self, request, *args, **kwargs):
+
+        queryset = self.get_queryset()
+        
+        cliente_lat = request.query_params.get('latitude')
+        cliente_lon = request.query_params.get('longitude')
+
+        #Tenta pegar do usuário logado (se for cliente)
+        if not cliente_lat and request.user.is_authenticated and hasattr(request.user, 'perfil_cliente'):
+             cliente_lat = request.user.perfil_cliente.latitude
+             cliente_lon = request.user.perfil_cliente.longitude
+
+        prestadores_lista = []
+        
+        for prestador in queryset:
+            dist = None
+            
+            # Só calcula se tivermos as coordenadas dos DOIS lados
+            if cliente_lat and cliente_lon and prestador.latitude and prestador.longitude:
+                dist = calcular_distancia(
+                    cliente_lat, cliente_lon, 
+                    prestador.latitude, prestador.longitude
+                )
+            
+            prestador.distancia = dist 
+            prestadores_lista.append(prestador)
+
+        # Só ordena se o front-end pedir explicitamente com ?ordenar_por_distancia=true
+        ordenar = request.query_params.get('ordenar_por_distancia')
+
+        if ordenar == 'true' and cliente_lat and cliente_lon:
+            # Ordena do menor para o maior
+            prestadores_lista.sort(key=lambda x: x.distancia if x.distancia is not None else float('inf'))
+
+        serializer = self.get_serializer(prestadores_lista, many=True)
+        return Response(serializer.data)
