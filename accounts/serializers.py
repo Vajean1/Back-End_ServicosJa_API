@@ -75,7 +75,6 @@ class ClienteRegistrationSerializer(serializers.ModelSerializer):
         return user
 
 class PrestadorRegistrationSerializer(serializers.ModelSerializer):
-    biografia = serializers.CharField(allow_blank=True, required=False, write_only=True)
     telefone_publico = serializers.CharField(write_only=True)
     cep = serializers.CharField(write_only=True)
     rua = serializers.CharField(write_only=True)
@@ -104,7 +103,6 @@ class PrestadorRegistrationSerializer(serializers.ModelSerializer):
             'cpf',
             'password', 
             'password2',
-            'biografia', 
             'telefone_publico', 
             'cep', 
             'rua', 
@@ -126,7 +124,6 @@ class PrestadorRegistrationSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         profile_data = {
-            'biografia': validated_data.get('biografia', ''),
             'telefone_publico': validated_data.get('telefone_publico'),
             'cep': validated_data.get('cep'),                     
             'rua': validated_data.get('rua'),                        
@@ -237,4 +234,11 @@ class PrestadorPublicoSerializer(serializers.ModelSerializer):
         ).order_by('-data_criacao')[:5]
         
         return AvaliacaoSimplesSerializer(avaliacoes, many=True).data
+
+class PrestadorProfileEditSerializer(serializers.ModelSerializer):
+    foto_perfil = serializers.ImageField(required=False)
+    biografia = serializers.CharField(required=False)
     
+    class Meta:
+        model = PrestadorProfile
+        fields = ['foto_perfil', 'biografia']

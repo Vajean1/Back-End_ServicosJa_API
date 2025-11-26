@@ -1,7 +1,7 @@
 from rest_framework import generics
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from .serializers import ClienteRegistrationSerializer, PrestadorRegistrationSerializer
+from .serializers import ClienteRegistrationSerializer, PrestadorRegistrationSerializer, PrestadorProfileEditSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import CustomTokenObtainPairSerializer
 from .models import PrestadorProfile
@@ -62,6 +62,8 @@ class PrestadorListView(generics.ListAPIView):
     ?possui_material_proprio=true/false
     ?disponibilidade=true/false
     ?atende_fim_de_semana=true/false
+    ?melhor_avaliado=true
+    ?nota_minima=ID
     
     ?ordenar_por_distancia=true (latitude/longitude do cliente logado ou na URL)
     """
@@ -97,6 +99,20 @@ class PrestadorListView(generics.ListAPIView):
         if fim_de_semana is not None:
             valor = fim_de_semana.lower() == 'true'
             queryset = queryset.filter(atende_fim_de_semana=valor)
+            
+        # Filtro por avaliação mínima
+        nota_minima = self.request.query_params.get('nota_minima')
+        if nota_minima:
+             try:
+                 nota = float(nota_minima)
+                 queryset = queryset.filter(nota_media_cache__gte=nota)
+             except ValueError:
+                 pass
+        
+        # Filtro para mostrar os mais bem avaliados (ordenação)
+        melhor_avaliado = self.request.query_params.get('melhor_avaliado')
+        if melhor_avaliado and melhor_avaliado.lower() == 'true':
+            queryset = queryset.order_by('-nota_media_cache')
 
         # Evita duplicatas
         return queryset.distinct()
@@ -137,3 +153,14 @@ class PrestadorListView(generics.ListAPIView):
 
         serializer = self.get_serializer(prestadores_lista, many=True)
         return Response(serializer.data)
+
+class PrestadorProfileEditView(generics.UpdateAPIView):
+    """
+    Endpoint para edição do perfil do prestador (foto e biografia).
+    Requer autenticação.
+    """
+    serializer_class = PrestadorProfileEditSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user.perfil_prestador

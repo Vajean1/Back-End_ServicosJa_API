@@ -103,6 +103,8 @@ class User(AbstractUser):
     ESCOLHA_GENERO = [
         ('M', 'Masculino'),
         ('F', 'Feminino'),
+        ('T', 'Trans'),
+        ('N', 'Não binário'),
         ('O', 'Outro'),
         ('P', 'Prefiro não informar'),
     ]
