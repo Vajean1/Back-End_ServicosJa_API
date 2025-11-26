@@ -53,8 +53,11 @@ def pegar_dados_endereco(cep: str | int, rua: str, numero: str | int) -> dict:
                 dados['longitude'] = to_decimal(coords[0])
                 dados['latitude'] = to_decimal(coords[1])
             
-            print(f"BrasilAPI deu certo: {dados['cidade']} - {dados['bairro']}")
-            return dados
+            if dados['latitude'] is not None and dados['longitude'] is not None:
+                print(f"BrasilAPI deu certo: {dados['cidade']} - {dados['bairro']}")
+                return dados
+            else:
+                 print("BrasilAPI retornou endereço sem coordenadas.")
             
     except Exception as e:
         print(f"BrasilAPI falhou: {e}")
@@ -84,7 +87,7 @@ def pegar_dados_endereco(cep: str | int, rua: str, numero: str | int) -> dict:
                     if loc:
                         dados['latitude'] = to_decimal(loc.latitude)
                         dados['longitude'] = to_decimal(loc.longitude)
-                        print(f"✅ Nominatim Sucesso: {dados['latitude']}, {dados['longitude']}")
+                        print(f"Nominatim deu certo: {dados['latitude']}, {dados['longitude']}")
                         break
                 except Exception as e:
                     print(f"Erro Nominatim {i+1}: {e}")
