@@ -34,6 +34,8 @@ DEBUG = os.environ.get('DEBUG') == 'True'
 
 ALLOWED_HOSTS = ['*']
 
+CORS_ALLOW_ALL_ORIGINS = True #False for deny all requests.
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -48,6 +50,7 @@ INSTALLED_APPS = [
 
     #Aqui é onde estão nossos apps terceirizados: DRF(Django RestFull Framework) e o JWT (Autenteicação)
 
+    'corsheaders',
     'rest_framework',
     'rest_framework_simplejwt',
     'drf_spectacular',
@@ -71,6 +74,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
