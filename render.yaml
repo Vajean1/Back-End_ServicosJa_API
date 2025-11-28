@@ -1,7 +1,7 @@
 databases:
   - name: servicosja-db
-    databaseName: servicosja
-    user: servicosja_user
+    databaseName: servicosja_db_7ohi
+    user: servicosja_db_7ohi_user
     plan: free
     region: oregon
 
