@@ -1,6 +1,7 @@
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from rest_framework_simplejwt.tokens import RefreshToken
 from .serializers import ClienteRegistrationSerializer, PrestadorRegistrationSerializer, PrestadorProfileEditSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import CustomTokenObtainPairSerializer
@@ -13,10 +14,38 @@ class ClienteRegistrationView(generics.CreateAPIView):
     serializer_class = ClienteRegistrationSerializer
     permission_classes = [AllowAny]
 
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        
+        refresh = RefreshToken.for_user(user)
+        
+        data = serializer.data
+        data['refresh'] = str(refresh)
+        data['access'] = str(refresh.access_token)
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
+
 class PrestadorRegistrationView(generics.CreateAPIView):
     #Endpoint da API Cliente. Aceita apenas requisições POST.
     serializer_class = PrestadorRegistrationSerializer
     permission_classes = [AllowAny]
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        
+        refresh = RefreshToken.for_user(user)
+        
+        data = serializer.data
+        data['refresh'] = str(refresh)
+        data['access'] = str(refresh.access_token)
+        
+        headers = self.get_success_headers(serializer.data)
+        return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     #View personalizada para obtenção de token JWT
@@ -35,7 +64,6 @@ def calcular_distancia(lat1, lon1, lat2, lon2):
     except ValueError:
         return None
 
-    # Raio da Terra em km
     R = 6371.0
 
     lat1_rad = math.radians(lat1)
@@ -81,11 +109,11 @@ class PrestadorListView(generics.ListAPIView):
 
         # Filtro por ID do Serviço
         if servico_id:
-            queryset = queryset.filter(servicos__id=servico_id)
+            queryset = queryset.filter(servico__id=servico_id)
 
         # Filtro por ID da Categoria
         if categoria_id:
-            queryset = queryset.filter(servicos__categoria__id=categoria_id)
+            queryset = queryset.filter(servico__categoria__id=categoria_id)
 
         # Filtros de material, disponibilidade e fim de semana
         if tem_material is not None:

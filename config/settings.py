@@ -73,6 +73,12 @@ CORS_ALLOW_CREDENTIALS = True
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
 ]
 
 CORS_ALLOW_HEADERS = [
@@ -209,7 +215,6 @@ REST_FRAMEWORK = {
     #Acesso ao swagger
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     # Define a permissão padrão (ex: só utilizadores logados)
-    # Por agora, vamos deixar aberto para testes, mas podemos mudar para IsAuthenticated
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.AllowAny',
     )
@@ -228,6 +233,6 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     # Opcional, mas limpa a UI:
     'SERVE_INCLUDE_SCHEMA': False,
-    # Isso ajuda o Swagger a entender uploads de arquivos (como no Portfólio)
+    # Isso ajuda o Swagger a entender uploads de arquivos
     'COMPONENT_SPLIT_REQUEST': True,
 }

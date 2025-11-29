@@ -3,7 +3,7 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from .models import ClienteProfile, PrestadorProfile
-from servicos.models import Servico
+from servicos.models import Servico, CategoriaServico
 from servicos.serializers import ServicoSerializer
 from portfolio.serializers import PortfolioItemSerializer
 from avaliacoes.models import Avaliacao
@@ -84,11 +84,16 @@ class PrestadorRegistrationSerializer(serializers.ModelSerializer):
     possui_material_proprio = serializers.BooleanField(default=False, write_only=True)
     atende_fim_de_semana = serializers.BooleanField(default=False, write_only=True)
 
-    servicos = serializers.PrimaryKeyRelatedField(
+    categoria = serializers.PrimaryKeyRelatedField(
+        queryset=CategoriaServico.objects.all(),
+        write_only=True,
+        required=True
+    )
+
+    servico = serializers.PrimaryKeyRelatedField(
         queryset = Servico.objects.all(),
-        many=True,
-        allow_empty=False,
-        write_only=True
+        write_only=True,
+        required=True
     )
 
     password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
@@ -110,7 +115,8 @@ class PrestadorRegistrationSerializer(serializers.ModelSerializer):
             'disponibilidade',
             'possui_material_proprio',
             'atende_fim_de_semana',
-            'servicos',
+            'categoria',
+            'servico',
         ]
         extra_kwargs = {
             'password': {'write_only': True},
@@ -119,6 +125,13 @@ class PrestadorRegistrationSerializer(serializers.ModelSerializer):
     def validate(self, data):
         if data['password'] != data['password2']:
             raise serializers.ValidationError("As senhas não coincidem.")
+        
+        categoria = data.get('categoria')
+        servico = data.get('servico')
+        
+        if servico and servico.categoria != categoria:
+            raise serializers.ValidationError({"servico": f"O serviço '{servico.nome}' não pertence à categoria '{categoria.nome}'."})
+        
         return data
 
     @transaction.atomic
@@ -133,10 +146,11 @@ class PrestadorRegistrationSerializer(serializers.ModelSerializer):
             'atende_fim_de_semana': validated_data.get('atende_fim_de_semana', False),
         }
         
-        servicos_data = validated_data.get('servicos', [])
+        servico_data = validated_data.get('servico')
 
         validated_data.pop('password2', None)
-        validated_data.pop('servicos', None)
+        validated_data.pop('servico', None)
+        validated_data.pop('categoria', None)
 
         for key in profile_data:
             validated_data.pop(key, None)
@@ -151,10 +165,9 @@ class PrestadorRegistrationSerializer(serializers.ModelSerializer):
         )
 
         profile = PrestadorProfile(user=user, **profile_data)
+        if servico_data:
+            profile.servico = servico_data
         profile.save()
-
-        if servicos_data:
-            profile.servicos.set(servicos_data)
             
         return user
 
@@ -185,7 +198,7 @@ class PrestadorPublicoSerializer(serializers.ModelSerializer):
     nome = serializers.CharField(source='user.nome_completo', read_only=True)
     email = serializers.EmailField(source='user.email', read_only=True)
     
-    servicos = ServicoSerializer(many=True, read_only=True)
+    servico = ServicoSerializer(read_only=True)
     foto = serializers.ImageField(source='foto_perfil', read_only=True)
     distancia = serializers.FloatField(read_only=True, required=False)
 
@@ -213,7 +226,7 @@ class PrestadorPublicoSerializer(serializers.ModelSerializer):
             'latitude',
             'longitude',
             'cidade', 'bairro', 'estado', 
-            'servicos',
+            'servico',
             'distancia',
             'portfolio',
             'nota_media',
@@ -236,8 +249,7 @@ class PrestadorPublicoSerializer(serializers.ModelSerializer):
         return AvaliacaoSimplesSerializer(avaliacoes, many=True).data
 
 class PrestadorProfileEditSerializer(serializers.ModelSerializer):
-    #Trocar depois para imageField para referenciar uma imagem.
-    foto_perfil = serializers.CharField(required=False)
+    foto_perfil = serializers.ImageField(required=False)
     biografia = serializers.CharField(required=False)
     
     class Meta:
