@@ -19,8 +19,7 @@ echo "Creating initial services..."
 python manage.py shell < criar_services.py
 
 echo "Populating database with sample data..."
-python manage.py shell < populate_data.py
+python manage.py populate_data
 
 echo "Starting Gunicorn..."
 gunicorn config.wsgi:application --bind 0.0.0.0:8000
-
