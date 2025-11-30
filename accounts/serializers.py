@@ -44,7 +44,7 @@ class ClienteRegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if data['password'] != data['password2']:
-            raise serializers.ValidationError("As senhas precisam ser iguais.")
+            raise serializers.ValidationError({"password2": "As senhas precisam ser iguais."})
         return data
 
     @transaction.atomic
@@ -129,7 +129,7 @@ class PrestadorRegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, data):
         if data['password'] != data['password2']:
-            raise serializers.ValidationError("As senhas não coincidem.")
+            raise serializers.ValidationError({"password2": "As senhas não coincidem."})
         
         categoria = data.get('categoria')
         servico = data.get('servico')
