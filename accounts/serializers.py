@@ -216,6 +216,9 @@ class PrestadorPublicoSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(source='user.email', read_only=True)
     
     servico = ServicoSerializer(read_only=True)
+    genero = serializers.CharField(source='user.genero', read_only=True)
+    data_nascimento = serializers.DateField(source='user.dt_nascimento', format="%d/%m/%Y", read_only=True)
+    categoria = serializers.CharField(source='servico.categoria.nome', read_only=True)
     foto = serializers.ImageField(source='foto_perfil', read_only=True)
     distancia = serializers.FloatField(read_only=True, required=False)
 
@@ -246,6 +249,9 @@ class PrestadorPublicoSerializer(serializers.ModelSerializer):
             'longitude',
             'cidade', 'bairro', 'estado', 
             'servico',
+            'genero',
+            'data_nascimento',
+            'categoria',
             'distancia',
             'portfolio',
             'nota_media',
