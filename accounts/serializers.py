@@ -344,10 +344,9 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'id', 'email', 'nome_completo', 'dt_nascimento', 'genero', 'cpf', 'tipo_usuario',
             'perfil_cliente', 'perfil_prestador'
         ]
-        read_only_fields = ['id', 'email', 'cpf', 'tipo_usuario'] # Email e CPF geralmente não se muda facilmente, Tipo não muda
+        read_only_fields = ['id', 'email', 'cpf', 'tipo_usuario']
 
     def to_representation(self, instance):
-        # Remove o perfil que não corresponde ao tipo do usuário para limpar a resposta
         ret = super().to_representation(instance)
         if instance.tipo_usuario == 'cliente':
             ret.pop('perfil_prestador', None)
@@ -356,13 +355,11 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return ret
 
     def update(self, instance, validated_data):
-        # Atualiza dados do User
         instance.nome_completo = validated_data.get('nome_completo', instance.nome_completo)
         instance.dt_nascimento = validated_data.get('dt_nascimento', instance.dt_nascimento)
         instance.genero = validated_data.get('genero', instance.genero)
         instance.save()
 
-        # Atualiza dados do Profile aninhado
         if instance.tipo_usuario == 'cliente':
             profile_data = validated_data.get('perfil_cliente')
             if profile_data:

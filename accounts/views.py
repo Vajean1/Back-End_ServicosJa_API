@@ -24,6 +24,7 @@ class ClienteRegistrationView(generics.CreateAPIView):
         data = serializer.data
         data['refresh'] = str(refresh)
         data['access'] = str(refresh.access_token)
+        data['user_id'] = user.id 
         
         headers = self.get_success_headers(serializer.data)
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
@@ -43,7 +44,14 @@ class PrestadorRegistrationView(generics.CreateAPIView):
         data = serializer.data
         data['refresh'] = str(refresh)
         data['access'] = str(refresh.access_token)
+        data['user_id'] = user.id
+        data['profile_id'] = user.perfil_prestador.id
         
+        if hasattr(user, 'perfil_prestador'):
+            data['profile_id'] = user.perfil_prestador.id
+        elif hasattr(user, 'perfil_cliente'):
+            data['profile_id'] = user.perfil_cliente.id
+
         headers = self.get_success_headers(serializer.data)
         return Response(data, status=status.HTTP_201_CREATED, headers=headers)
 
