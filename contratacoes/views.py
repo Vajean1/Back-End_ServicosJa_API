@@ -2,6 +2,7 @@ from rest_framework import generics, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from urllib.parse import quote
+from drf_spectacular.utils import extend_schema
 from .models import SolicitacaoContato
 from .serializers import ContatoSerializer
 
@@ -12,6 +13,11 @@ class IniciarContatoWhatsAppView(APIView):
     """
     permission_classes = [permissions.IsAuthenticated] # Só clientes logados podem clicar
 
+    @extend_schema(
+        request=ContatoSerializer,
+        responses={201: dict, 400: dict},
+        description="Inicia o contato via WhatsApp. Requer 'prestador_id' e 'servico'."
+    )
     def post(self, request):
         serializer = ContatoSerializer(data=request.data, context={'request': request})
         
