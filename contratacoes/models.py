@@ -17,4 +17,4 @@ class SolicitacaoContato(models.Model):
         return hasattr(self, 'avaliacao')
 
     def __str__(self):
-        return f"Contato: {self.cliente.first_name} -> {self.prestador.first_name} ({self.servico.nome})"
+        return f"Contato: {self.cliente.nome_completo} -> {self.prestador.nome_completo} ({self.servico.nome})"

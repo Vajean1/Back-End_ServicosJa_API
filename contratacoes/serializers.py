@@ -20,8 +20,8 @@ class ContatoSerializer(serializers.ModelSerializer):
         return data
 
 class SolicitacaoContatoDetailSerializer(serializers.ModelSerializer):
-    cliente_nome = serializers.CharField(source='cliente.first_name', read_only=True)
-    prestador_nome = serializers.CharField(source='prestador.first_name', read_only=True)
+    cliente_nome = serializers.CharField(source='cliente.nome_completo', read_only=True)
+    prestador_nome = serializers.CharField(source='prestador.nome_completo', read_only=True)
     servico_nome = serializers.CharField(source='servico.nome', read_only=True)
     
     avaliacao_realizada = serializers.BooleanField(read_only=True)

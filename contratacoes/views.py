@@ -39,8 +39,8 @@ class IniciarContatoWhatsAppView(APIView):
             telefone_formatado = f"55{telefone}" 
 
             mensagem = (
-                f"Olá {prestador_user.first_name}! "
-                f"Me chamo {cliente_user.first_name}. "
+                f"Olá {prestador_user.get_short_name()}! "
+                f"Me chamo {cliente_user.get_short_name()}. "
                 f"Encontrei seu perfil no *ServiçoJá* e gostaria de um orçamento para *{servico.nome}*."
             )
             
@@ -99,7 +99,7 @@ class ConcluirServicoView(APIView):
              telefone_cliente = ""
 
         mensagem = (
-            f"Olá {cliente_user.first_name}! "
+            f"Olá {cliente_user.get_short_name()}! "
             f"O serviço de *{servico.nome}* foi concluído com sucesso. "
             f"Poderia avaliar meu atendimento? Isso é muito importante para mim! "
             f"Link: {link_avaliacao}"

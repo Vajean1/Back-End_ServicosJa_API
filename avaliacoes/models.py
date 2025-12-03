@@ -26,7 +26,6 @@ class Avaliacao(models.Model):
     
     def __str__(self):
         try:
-            return f'Avaliação de {self.solicitacao_contato.cliente.first_name} (Nota: {self.nota})'
+            return f'Avaliação de {self.solicitacao_contato.cliente.nome_completo} (Nota: {self.nota})'
         except:
             return f'Avaliação (ID: {self.id})'
-        
