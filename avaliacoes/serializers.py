@@ -28,8 +28,23 @@ class CriarAvaliacaoSerializer(serializers.ModelSerializer):
 
 class AvaliacaoSerializer(serializers.ModelSerializer):
     cliente_nome = serializers.CharField(source='solicitacao_contato.cliente.nome_completo', read_only=True)
+    prestador_nome = serializers.CharField(source='solicitacao_contato.prestador.nome_completo', read_only=True)
+    prestador_id = serializers.IntegerField(source='solicitacao_contato.prestador.id', read_only=True)
+    prestador_foto = serializers.SerializerMethodField()
     data = serializers.DateTimeField(source='data_criacao', format="%d/%m/%Y", read_only=True)
     
     class Meta:
         model = Avaliacao
-        fields = ['id', 'cliente_nome', 'nota', 'comentario', 'data']
+        fields = ['id', 'cliente_nome', 'prestador_nome', 'prestador_id', 'prestador_foto', 'nota', 'comentario', 'data']
+
+    def get_prestador_foto(self, obj):
+        try:
+            profile = obj.solicitacao_contato.prestador.perfil_prestador
+            if profile.foto_perfil:
+                request = self.context.get('request')
+                if request:
+                    return request.build_absolute_uri(profile.foto_perfil.url)
+                return profile.foto_perfil.url
+        except:
+            pass
+        return None
