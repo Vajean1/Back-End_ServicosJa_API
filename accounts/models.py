@@ -162,6 +162,7 @@ class ClienteProfile(models.Model):
     longitude = models.DecimalField(max_digits=11, decimal_places=8, null=True, blank=True)
     
     favoritos = models.ManyToManyField('PrestadorProfile', related_name='favoritado_por', blank=True)
+    foto_perfil = models.ImageField(upload_to='perfil_clientes/', null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

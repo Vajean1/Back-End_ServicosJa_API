@@ -312,9 +312,11 @@ class PrestadorProfileEditSerializer(serializers.ModelSerializer):
         fields = ['foto_perfil', 'biografia']
 
 class ClienteProfileSerializer(serializers.ModelSerializer):
+    foto_perfil = serializers.ImageField(required=False)
+
     class Meta:
         model = ClienteProfile
-        fields = ['telefone_contato', 'cep', 'rua', 'numero_casa', 'complemento', 'cidade', 'bairro', 'estado', 'latitude', 'longitude']
+        fields = ['telefone_contato', 'cep', 'rua', 'numero_casa', 'complemento', 'cidade', 'bairro', 'estado', 'latitude', 'longitude', 'foto_perfil']
         read_only_fields = [
             'latitude', 
             'longitude'
