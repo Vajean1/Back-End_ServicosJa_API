@@ -23,6 +23,12 @@ class AvaliacaoListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Avaliacao.objects.all()
+        
+        # Filtro: Minhas avaliações (enviadas pelo usuário logado)
+        minhas = self.request.query_params.get('minhas')
+        if minhas == 'true' and self.request.user.is_authenticated:
+            queryset = queryset.filter(solicitacao_contato__cliente=self.request.user)
+
         prestador_id = self.request.query_params.get('prestador')
         
         if prestador_id:
