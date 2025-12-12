@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count
 from .models import ClienteProfile, PrestadorProfile
-from .validators import validar_cpf, validar_telefone, validar_cep
+from .validators import validar_cpf, validar_telefone, validar_cep, validar_data_nascimento
 from servicos.models import Servico, CategoriaServico
 from servicos.serializers import ServicoSerializer
 from portfolio.serializers import PortfolioItemSerializer
@@ -16,7 +16,7 @@ class ClienteRegistrationSerializer(serializers.ModelSerializer):
     dt_nascimento = serializers.DateField(format="%d/%m/%Y", input_formats=["%d/%m/%Y", "%Y-%m-%d"])
     telefone_contato = serializers.CharField(write_only=True, validators=[validar_telefone], required=True)
     cep = serializers.CharField(write_only=True, validators=[validar_cep], required=True)
-    cpf = serializers.CharField(validators=[validar_cpf], required=True)
+    cpf = serializers.CharField(required=True)
     rua = serializers.CharField(write_only=True, required=True)
     numero_casa = serializers.CharField(write_only=True, required=True)
     
@@ -44,6 +44,15 @@ class ClienteRegistrationSerializer(serializers.ModelSerializer):
             'genero': {'required': True},
             'tipo_usuario': {'read_only': True},
         }
+
+    def validate_dt_nascimento(self, value):
+        return validar_data_nascimento(value)
+
+    def validate_cpf(self, value):
+        cleaned_cpf = validar_cpf(value)
+        if User.objects.filter(cpf=cleaned_cpf).exists():
+            raise serializers.ValidationError("Este CPF já está cadastrado.")
+        return cleaned_cpf
 
     def validate(self, data):
         if data['password'] != data['password2']:
@@ -82,7 +91,7 @@ class PrestadorRegistrationSerializer(serializers.ModelSerializer):
     dt_nascimento = serializers.DateField(format="%d/%m/%Y", input_formats=["%d/%m/%Y", "%Y-%m-%d"])
     telefone_publico = serializers.CharField(write_only=True, validators=[validar_telefone], required=True)
     cep = serializers.CharField(write_only=True, validators=[validar_cep], required=True)
-    cpf = serializers.CharField(validators=[validar_cpf], required=True)
+    cpf = serializers.CharField(required=True)
     rua = serializers.CharField(write_only=True, required=True)
     numero_casa = serializers.CharField(write_only=True, required=True)
     
@@ -131,6 +140,15 @@ class PrestadorRegistrationSerializer(serializers.ModelSerializer):
             'genero': {'required': True},
             'tipo_usuario': {'read_only': True},
         }
+
+    def validate_dt_nascimento(self, value):
+        return validar_data_nascimento(value)
+
+    def validate_cpf(self, value):
+        cleaned_cpf = validar_cpf(value)
+        if User.objects.filter(cpf=cleaned_cpf).exists():
+            raise serializers.ValidationError("Este CPF já está cadastrado.")
+        return cleaned_cpf
 
     def validate(self, data):
         if data['password'] != data['password2']:
@@ -218,23 +236,16 @@ class AvaliacaoSimplesSerializer(serializers.ModelSerializer):
 class PrestadorPublicoSerializer(serializers.ModelSerializer):
     user_id = serializers.IntegerField(source='user.id', read_only=True)
     nome = serializers.CharField(source='user.nome_completo', read_only=True)
-    email = serializers.EmailField(source='user.email', read_only=True)
     
     servico = ServicoSerializer(read_only=True)
-    genero = serializers.CharField(source='user.genero', read_only=True)
-    data_nascimento = serializers.DateField(source='user.dt_nascimento', format="%d/%m/%Y", read_only=True)
     categoria = serializers.CharField(source='servico.categoria.nome', read_only=True)
     foto = serializers.ImageField(source='foto_perfil', read_only=True)
-    distancia = serializers.FloatField(read_only=True, required=False)
-
-    localizacao = serializers.SerializerMethodField()
 
     portfolio = PortfolioItemSerializer(source='portfolioitem_set', many=True, read_only=True)
     nota_media = serializers.DecimalField(source='nota_media_cache', max_digits=3, decimal_places=1, read_only=True)
     total_avaliacoes = serializers.IntegerField(source='total_avaliacoes_cache', read_only=True)
     estatisticas = serializers.SerializerMethodField()
     ultimas_avaliacoes = serializers.SerializerMethodField()
-    data_registro = serializers.DateTimeField(source='created_at', format="%d/%m/%Y", read_only=True)
 
     class Meta:
         model = PrestadorProfile
@@ -242,29 +253,27 @@ class PrestadorPublicoSerializer(serializers.ModelSerializer):
             'id',
             'user_id', 
             'nome', 
-            'email',
             'foto',
-            'localizacao',
             'biografia',
             'telefone_publico',
-            'disponibilidade',
-            'possui_material_proprio',
-            'atende_fim_de_semana',
-            'latitude',
-            'longitude',
-            'cidade', 'bairro', 'estado', 
+            'cidade', 'bairro', 'estado',
             'servico',
-            'genero',
-            'data_nascimento',
             'categoria',
-            'distancia',
             'portfolio',
             'nota_media',
             'total_avaliacoes',
             'estatisticas',
             'ultimas_avaliacoes',
-            'data_registro'
         ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        
+        if not (request and request.user.is_authenticated and request.user.tipo_usuario == 'cliente'):
+             data.pop('telefone_publico', None)
+             
+        return data
 
     def get_estatisticas(self, obj):
         queryset = Avaliacao.objects.filter(solicitacao_contato__prestador=obj.user)
@@ -273,7 +282,7 @@ class PrestadorPublicoSerializer(serializers.ModelSerializer):
         
         # Inicializa contadores
         distribuicao = {i: 0 for i in range(1, 6)}
-        total = obj.total_avaliacoes_cache # usando cache
+        total = obj.total_avaliacoes_cache # Usando cache para performance
         
         for item in counts:
             distribuicao[item['nota']] = item['count']
@@ -289,13 +298,6 @@ class PrestadorPublicoSerializer(serializers.ModelSerializer):
         return {
             "distribuicao": stats_distribuicao
         }
-
-    def get_localizacao(self, obj):
-        partes = []
-        if obj.cidade: partes.append(obj.cidade)
-        if obj.bairro: partes.append(obj.bairro)
-        if obj.estado: partes.append(obj.estado)
-        return ", ".join(partes) if partes else "Localização não informada"
 
     def get_ultimas_avaliacoes(self, obj):
         avaliacoes = Avaliacao.objects.filter(
@@ -346,6 +348,7 @@ class PrestadorProfileSerializer(serializers.ModelSerializer):
     )
     telefone_publico = serializers.CharField(validators=[validar_telefone], required=True)
     cep = serializers.CharField(validators=[validar_cep], required=True)
+    data_registro = serializers.DateTimeField(source='created_at', format="%d/%m/%Y", read_only=True)
 
     class Meta:
         model = PrestadorProfile
@@ -353,7 +356,7 @@ class PrestadorProfileSerializer(serializers.ModelSerializer):
             'biografia', 'telefone_publico', 'cep', 'rua', 'numero_casa', 'complemento', 
             'cidade', 'bairro', 'estado', 'latitude', 'longitude', 
             'disponibilidade', 'possui_material_proprio', 'atende_fim_de_semana', 
-            'foto_perfil', 'servico', 'categoria', 'categoria_id'
+            'foto_perfil', 'servico', 'categoria', 'categoria_id', 'data_registro'
         ]
         read_only_fields = [
             'latitude',
