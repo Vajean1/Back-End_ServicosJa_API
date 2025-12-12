@@ -14,11 +14,11 @@ User = get_user_model()
 
 class ClienteRegistrationSerializer(serializers.ModelSerializer):
     dt_nascimento = serializers.DateField(format="%d/%m/%Y", input_formats=["%d/%m/%Y", "%Y-%m-%d"])
-    telefone_contato = serializers.CharField(write_only=True, validators=[validar_telefone])
-    cep = serializers.CharField(write_only=True, validators=[validar_cep])
+    telefone_contato = serializers.CharField(write_only=True, validators=[validar_telefone], required=True)
+    cep = serializers.CharField(write_only=True, validators=[validar_cep], required=True)
     cpf = serializers.CharField(validators=[validar_cpf], required=True)
-    rua = serializers.CharField(write_only=True)
-    numero_casa = serializers.CharField(write_only=True)
+    rua = serializers.CharField(write_only=True, required=True)
+    numero_casa = serializers.CharField(write_only=True, required=True)
     
     password2 = serializers.CharField(style={'input_type': 'password'}, write_only=True)
 
@@ -80,11 +80,11 @@ class ClienteRegistrationSerializer(serializers.ModelSerializer):
 
 class PrestadorRegistrationSerializer(serializers.ModelSerializer):
     dt_nascimento = serializers.DateField(format="%d/%m/%Y", input_formats=["%d/%m/%Y", "%Y-%m-%d"])
-    telefone_publico = serializers.CharField(write_only=True, validators=[validar_telefone])
-    cep = serializers.CharField(write_only=True, validators=[validar_cep])
+    telefone_publico = serializers.CharField(write_only=True, validators=[validar_telefone], required=True)
+    cep = serializers.CharField(write_only=True, validators=[validar_cep], required=True)
     cpf = serializers.CharField(validators=[validar_cpf], required=True)
-    rua = serializers.CharField(write_only=True)
-    numero_casa = serializers.CharField(write_only=True)
+    rua = serializers.CharField(write_only=True, required=True)
+    numero_casa = serializers.CharField(write_only=True, required=True)
     
     disponibilidade = serializers.BooleanField(write_only=True) 
     possui_material_proprio = serializers.BooleanField(default=False, write_only=True)
