@@ -7,12 +7,14 @@ from .serializers import (
     ClienteRegistrationSerializer, 
     PrestadorRegistrationSerializer, 
     PrestadorProfileEditSerializer,
-    ClienteProfileEditSerializer
+    ClienteProfileEditSerializer,
+    PrestadorListSerializer
 )
 from rest_framework_simplejwt.views import TokenObtainPairView
 from .serializers import CustomTokenObtainPairSerializer, UserProfileSerializer
 from .models import PrestadorProfile, User
 from .serializers import PrestadorPublicoSerializer
+from drf_spectacular.utils import extend_schema
 import math
 
 class ClienteRegistrationView(generics.CreateAPIView):
@@ -119,11 +121,16 @@ class PrestadorListView(generics.ListAPIView):
     ?ordenar_por_distancia=true (latitude/longitude do cliente logado ou na URL)
 
     """
-    serializer_class = PrestadorPublicoSerializer
+    serializer_class = PrestadorListSerializer # Serializer otimizado
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        queryset = PrestadorProfile.objects.all()
+        # Otimização: Carregamos user e servico antecipadamente para evitar N+1
+        queryset = PrestadorProfile.objects.all().select_related(
+            'user', 'servico', 'servico__categoria'
+        ).prefetch_related(
+            'portfolioitem_set'
+        )
 
         servico_id = self.request.query_params.get('servico')
         categoria_id = self.request.query_params.get('categoria')
@@ -186,7 +193,6 @@ class PrestadorListView(generics.ListAPIView):
         cliente_lat = request.query_params.get('latitude')
         cliente_lon = request.query_params.get('longitude')
 
-        #Tenta pegar do usuário logado (se for cliente)
         if not cliente_lat and request.user.is_authenticated and hasattr(request.user, 'perfil_cliente'):
              cliente_lat = request.user.perfil_cliente.latitude
              cliente_lon = request.user.perfil_cliente.longitude
@@ -196,7 +202,6 @@ class PrestadorListView(generics.ListAPIView):
         for prestador in queryset:
             dist = None
             
-            # Só calcula se tivermos as coordenadas dos DOIS lados
             if cliente_lat and cliente_lon and prestador.latitude and prestador.longitude:
                 dist = calcular_distancia(
                     cliente_lat, cliente_lon, 
@@ -206,12 +211,15 @@ class PrestadorListView(generics.ListAPIView):
             prestador.distancia = dist 
             prestadores_lista.append(prestador)
 
-        # Só ordena se o front-end pedir explicitamente com ?ordenar_por_distancia=true
         ordenar = request.query_params.get('ordenar_por_distancia')
 
         if ordenar == 'true' and cliente_lat and cliente_lon:
-            # Ordena do menor para o maior
             prestadores_lista.sort(key=lambda x: x.distancia if x.distancia is not None else float('inf'))
+
+        page = self.paginate_queryset(prestadores_lista)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
 
         serializer = self.get_serializer(prestadores_lista, many=True)
         return Response(serializer.data)
@@ -240,6 +248,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 class FavoritoManageView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(responses=PrestadorPublicoSerializer(many=True))
     def get(self, request):
         if not hasattr(request.user, 'perfil_cliente'):
              return Response({"detail": "Apenas clientes podem ter favoritos."}, status=status.HTTP_403_FORBIDDEN)
@@ -248,6 +257,7 @@ class FavoritoManageView(APIView):
         serializer = PrestadorPublicoSerializer(favoritos, many=True)
         return Response(serializer.data)
 
+    @extend_schema(request=None, responses={200: dict, 201: dict})
     def post(self, request):
         if not hasattr(request.user, 'perfil_cliente'):
              return Response({"detail": "Apenas clientes podem adicionar favoritos."}, status=status.HTTP_403_FORBIDDEN)

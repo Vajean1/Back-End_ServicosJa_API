@@ -1,4 +1,6 @@
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 from .models import Avaliacao
 from contratacoes.models import SolicitacaoContato
 
@@ -37,6 +39,7 @@ class AvaliacaoSerializer(serializers.ModelSerializer):
         model = Avaliacao
         fields = ['id', 'cliente_nome', 'prestador_nome', 'prestador_id', 'prestador_foto', 'nota', 'comentario', 'data']
 
+    @extend_schema_field(OpenApiTypes.URI)
     def get_prestador_foto(self, obj):
         try:
             profile = obj.solicitacao_contato.prestador.perfil_prestador

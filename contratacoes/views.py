@@ -79,6 +79,7 @@ class SolicitacaoClienteListView(generics.ListAPIView):
 class ConcluirServicoView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(request=None, responses={200: dict})
     def post(self, request, pk):
         try:
             solicitacao = SolicitacaoContato.objects.get(pk=pk, prestador=request.user)
@@ -123,6 +124,7 @@ class ConcluirServicoView(APIView):
 class NaoRealizarServicoView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(request=None, responses={200: dict})
     def post(self, request, pk):
         try:
             solicitacao = SolicitacaoContato.objects.get(pk=pk, prestador=request.user)

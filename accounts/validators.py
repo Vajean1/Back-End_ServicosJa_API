@@ -3,7 +3,6 @@ from datetime import date
 from django.core.exceptions import ValidationError
 
 def clean_digits(value):
-    """Remove caracteres não numéricos."""
     if not value:
         return ""
     return re.sub(r'\D', '', str(value))

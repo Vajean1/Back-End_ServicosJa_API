@@ -77,15 +77,27 @@ class AvaliacaoListView(generics.ListAPIView):
                 "porcentagem": round((count / total * 100), 2) if total > 0 else 0
             }
 
+        # Paginação
+        page = self.paginate_queryset(queryset)
+        
+        estatisticas_data = {
+            "media_geral": round(stats['media'], 2) if stats['media'] else 0,
+            "total_avaliacoes": total,
+            "distribuicao": stats_distribuicao
+        }
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            response = self.get_paginated_response(serializer.data)
+            # Injeta estatísticas na resposta paginada
+            response.data['estatisticas'] = estatisticas_data
+            return response
+
         serializer = self.get_serializer(queryset, many=True)
         
         return Response({
-            "estatisticas": {
-                "media_geral": round(stats['media'], 2) if stats['media'] else 0,
-                "total_avaliacoes": total,
-                "distribuicao": stats_distribuicao
-            },
-            "avaliacoes": serializer.data
+            "estatisticas": estatisticas_data,
+            "results": serializer.data
         })
 
 class AvaliacaoDetailView(generics.RetrieveAPIView):

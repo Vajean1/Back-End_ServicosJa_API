@@ -3,6 +3,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count
+from drf_spectacular.utils import extend_schema_field
+from drf_spectacular.types import OpenApiTypes
 from .models import ClienteProfile, PrestadorProfile
 from .validators import validar_cpf, validar_telefone, validar_cep, validar_data_nascimento
 from servicos.models import Servico, CategoriaServico
@@ -50,8 +52,6 @@ class ClienteRegistrationSerializer(serializers.ModelSerializer):
 
     def validate_cpf(self, value):
         cleaned_cpf = validar_cpf(value)
-        if User.objects.filter(cpf=cleaned_cpf).exists():
-            raise serializers.ValidationError("Este CPF já está cadastrado.")
         return cleaned_cpf
 
     def validate(self, data):
@@ -146,8 +146,6 @@ class PrestadorRegistrationSerializer(serializers.ModelSerializer):
 
     def validate_cpf(self, value):
         cleaned_cpf = validar_cpf(value)
-        if User.objects.filter(cpf=cleaned_cpf).exists():
-            raise serializers.ValidationError("Este CPF já está cadastrado.")
         return cleaned_cpf
 
     def validate(self, data):
@@ -275,6 +273,7 @@ class PrestadorPublicoSerializer(serializers.ModelSerializer):
              
         return data
 
+    @extend_schema_field(OpenApiTypes.OBJECT)
     def get_estatisticas(self, obj):
         queryset = Avaliacao.objects.filter(solicitacao_contato__prestador=obj.user)
         
@@ -299,12 +298,63 @@ class PrestadorPublicoSerializer(serializers.ModelSerializer):
             "distribuicao": stats_distribuicao
         }
 
+    @extend_schema_field(AvaliacaoSimplesSerializer(many=True))
     def get_ultimas_avaliacoes(self, obj):
         avaliacoes = Avaliacao.objects.filter(
             solicitacao_contato__prestador=obj.user
         ).order_by('-data_criacao')[:5]
         
         return AvaliacaoSimplesSerializer(avaliacoes, many=True).data
+
+class PrestadorListSerializer(serializers.ModelSerializer):
+    """
+    Serializer otimizado para listagem de prestadores.
+    Remove campos pesados como estatísticas detalhadas e últimas avaliações.
+    """
+    user_id = serializers.IntegerField(source='user.id', read_only=True)
+    nome = serializers.CharField(source='user.nome_completo', read_only=True)
+    
+    servico = ServicoSerializer(read_only=True)
+    categoria = serializers.CharField(source='servico.categoria.nome', read_only=True)
+    foto = serializers.ImageField(source='foto_perfil', read_only=True)
+
+    # Mantemos o portfólio pois é visualmente importante na lista, mas deve ser usado com prefetch_related
+    portfolio = PortfolioItemSerializer(source='portfolioitem_set', many=True, read_only=True)
+    
+    # Usamos os campos de cache para evitar queries extras
+    nota_media = serializers.DecimalField(source='nota_media_cache', max_digits=3, decimal_places=1, read_only=True)
+    total_avaliacoes = serializers.IntegerField(source='total_avaliacoes_cache', read_only=True)
+    
+    # Campo injetado manualmente na view após o cálculo
+    distancia = serializers.FloatField(read_only=True)
+
+    class Meta:
+        model = PrestadorProfile
+        fields = [
+            'id',
+            'user_id', 
+            'nome', 
+            'foto',
+            'biografia',
+            'telefone_publico',
+            'cidade', 'bairro', 'estado',
+            'servico',
+            'categoria',
+            'portfolio',
+            'nota_media',
+            'total_avaliacoes',
+            'distancia',
+        ]
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        
+        # Oculta telefone se não for cliente autenticado
+        if not (request and request.user.is_authenticated and request.user.tipo_usuario == 'cliente'):
+             data.pop('telefone_publico', None)
+             
+        return data
 
 class PrestadorProfileEditSerializer(serializers.ModelSerializer):
     foto_perfil = serializers.ImageField(required=False)

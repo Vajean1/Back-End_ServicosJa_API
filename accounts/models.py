@@ -119,7 +119,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True)
     dt_nascimento = models.DateField(null=True)
     genero = models.CharField(max_length=1, choices=ESCOLHA_GENERO, null=True)
-    cpf = models.CharField(max_length=11, unique=True, null=True, help_text='CPF sem pontuação')
+    cpf = models.CharField(max_length=11, null=True, help_text='CPF sem pontuação')
 
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username', 'nome_completo']
