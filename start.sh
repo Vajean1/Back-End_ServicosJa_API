@@ -12,9 +12,6 @@ fi
 echo "Running migrations..."
 python manage.py migrate --noinput --verbosity 2
 
-echo "Creating superuser..."
-python create_superuser.py
-
 echo "Creating initial services..."
 python manage.py shell < criar_services.py
 
