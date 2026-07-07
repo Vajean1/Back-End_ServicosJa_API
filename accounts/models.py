@@ -1,6 +1,6 @@
 import requests
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
 from django.core.validators import MinValueValidator, RegexValidator
 from datetime import date
 from django.forms import ValidationError
@@ -17,7 +17,7 @@ def _sanitize_telefone(phone):
     return ''.join(filter(str.isdigit, str(phone)))
 
 
-class ActiveManager(models.Manager):
+class ActiveManager(UserManager):
     """
     Manager que retorna apenas registros não deletados.
     Uso padrão: Model.objects.all() retorna apenas ativos
