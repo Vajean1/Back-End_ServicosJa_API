@@ -9,13 +9,17 @@ https://docs.djangoproject.com/en/5.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
-#import para o JWT
+
+import sys
+
+# import para o JWT
 from datetime import timedelta
 import dj_database_url
 
 import os
 from pathlib import Path
-#Para carregar ao dotenv, com a secretkey do django
+
+# Para carregar ao dotenv, com a secretkey do django
 from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -25,68 +29,79 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
-load_dotenv(os.path.join(BASE_DIR, '.env'))
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY')
+SECRET_KEY = os.environ.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.environ.get('DEBUG') == 'True'
+DEBUG = os.environ.get("DEBUG") == "True"
 
 # Configurações de Segurança para Produção
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
-    SECURE_HSTS_SECONDS = 31536000 # 1 ano
+    SECURE_HSTS_SECONDS = 31536000  # 1 ano
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ["back-end-servicosja-api.onrender.com"]
+
+if DEBUG:
+    ALLOWED_HOSTS = [
+        "back-end-servicosja-api.onrender.com",
+        "localhost:8000",
+        "127.0.0.1:8000",
+        "localhost",
+    ]
 
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-    'cloudinary_storage',
-    'cloudinary',
-
-    #Aqui é onde estão nossos apps terceirizados: DRF(Django RestFull Framework) e o JWT (Autenteicação)
-
-    'corsheaders',
-    'rest_framework',
-    'rest_framework_simplejwt',
-    'drf_spectacular',
-
-    #Aqui para baixo serão os apps do django para a criação da api
-    'accounts',
-    'servicos',
-    'avaliacoes',
-    'portfolio',
-    'contratacoes',
-
-
-
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    "cloudinary_storage",
+    "cloudinary",
+    # Aqui é onde estão nossos apps terceirizados: DRF(Django RestFull Framework) e o JWT (Autenteicação)
+    "corsheaders",
+    "rest_framework",
+    "rest_framework_simplejwt",
+    "drf_spectacular",
+    # Aqui para baixo serão os apps do django para a criação da api
+    "accounts",
+    "servicos",
+    "avaliacoes",
+    "portfolio",
+    "contratacoes",
 ]
 
-AUTH_USER_MODEL = 'accounts.User'
+AUTH_USER_MODEL = "accounts.User"
 
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 CORS_ALLOW_CREDENTIALS = True
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
 
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://servicosja-7a227.web.app",
-]
+CORS_ALLOWED_ORIGINS = ["https://servicosja-te5n.onrender.com"]
+
+if DEBUG:
+    CORS_ALLOWED_ORIGINS = [
+        "https://servicosja-te5n.onrender.com",
+        "http://localhost:8000",
+        "http://localhost:5173",
+        "http://localhost:3000",
+        "http://127.0.0.1:8000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3000",
+    ]
+
+CSRF_TRUSTED_ORIGINS = ["https://servicosja-te5n.onrender.com"]
 
 CORS_ALLOW_HEADERS = [
     "accept",
@@ -110,52 +125,53 @@ CORS_ALLOW_METHODS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'corsheaders.middleware.CorsMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    "django.middleware.security.SecurityMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = 'config.urls'
+ROOT_URLCONF = "config.urls"
 
 TEMPLATES = [
     {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [],
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                "django.template.context_processors.request",
+                "django.contrib.auth.context_processors.auth",
+                "django.contrib.messages.context_processors.messages",
             ],
         },
     },
 ]
 
-WSGI_APPLICATION = 'config.wsgi.application'
-
+WSGI_APPLICATION = "config.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='sqlite:///' + str(BASE_DIR / 'db.sqlite3'),
-        conn_max_age=600
+    "default": dj_database_url.config(
+        default="sqlite:///" + str(BASE_DIR / "db.sqlite3"), conn_max_age=600
     )
 }
 
 # Debugging DB connection
-import sys
+
 print(f"DEBUG: DATABASE_URL in env: {'DATABASE_URL' in os.environ}", file=sys.stderr)
-if 'DATABASE_URL' in os.environ:
-    print(f"DEBUG: DATABASE_URL value starts with: {os.environ['DATABASE_URL'][:10]}...", file=sys.stderr)
+if "DATABASE_URL" in os.environ:
+    print(
+        f"DEBUG: DATABASE_URL value starts with: {os.environ['DATABASE_URL'][:10]}...",
+        file=sys.stderr,
+    )
 print(f"DEBUG: Active DB Engine: {DATABASES['default']['ENGINE']}", file=sys.stderr)
 print(f"DEBUG: Active DB Name: {DATABASES['default']['NAME']}", file=sys.stderr)
 
@@ -165,16 +181,16 @@ print(f"DEBUG: Active DB Name: {DATABASES['default']['NAME']}", file=sys.stderr)
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+        "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.CommonPasswordValidator",
     },
     {
-        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+        "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
 
@@ -182,9 +198,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
-LANGUAGE_CODE = 'pt-br'
+LANGUAGE_CODE = "pt-br"
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = "UTC"
 
 USE_I18N = True
 
@@ -194,12 +210,12 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = '/static/'
-STATIC_ROOT = BASE_DIR / 'staticfiles'
+STATIC_URL = "/static/"
+STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # Media Config
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
 
 # Django 5 Storage Configuration (Substitui DEFAULT_FILE_STORAGE e STATICFILES_STORAGE)
 STORAGES = {
@@ -212,57 +228,52 @@ STORAGES = {
 }
 
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
-    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
-    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+    "CLOUD_NAME": os.environ.get("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": os.environ.get("CLOUDINARY_API_KEY"),
+    "API_SECRET": os.environ.get("CLOUDINARY_API_SECRET"),
 }
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
     # Define a autenticação padrão para a nossa API
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
     ),
-    #Acesso ao swagger
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # Acesso ao swagger
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     # Define a permissão padrão (ex: só utilizadores logados)
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.AllowAny',
-    ),
+    "DEFAULT_PERMISSION_CLASSES": ("rest_framework.permissions.AllowAny",),
     # Configuração de paginação padrão
-    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 20,
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 20,
     # Configuração de Limitação de Requisições (Throttling)
-    'DEFAULT_THROTTLE_CLASSES': [
-        'rest_framework.throttling.AnonRateThrottle',
-        'rest_framework.throttling.UserRateThrottle'
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
     ],
-    'DEFAULT_THROTTLE_RATES': {
-        'anon': '30/minute',
-        'user': '300/minute'
-    },
+    "DEFAULT_THROTTLE_RATES": {"anon": "30/minute", "user": "300/minute"},
     # Configuração de data para o padrão brasileiro
-    'DATE_INPUT_FORMATS': ["%d/%m/%Y", "%Y-%m-%d"],
-    'DATE_FORMAT': "%d/%m/%Y",
+    "DATE_INPUT_FORMATS": ["%d/%m/%Y", "%Y-%m-%d"],
+    "DATE_FORMAT": "%d/%m/%Y",
 }
 
 SIMPLE_JWT = {
-    #Período em tempo de acessso.
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1), 
+    # Período em tempo de acessso.
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
 }
 
 # Swagger para documentação da API
 SPECTACULAR_SETTINGS = {
-    'TITLE': 'ServiçoJá API',
-    'DESCRIPTION': 'Documentação da API para o Projeto Integrador "ServiçoJá".',
-    'VERSION': '1.0.0',
+    "TITLE": "ServiçoJá API",
+    "DESCRIPTION": 'Documentação da API para o Projeto Integrador "ServiçoJá".',
+    "VERSION": "1.0.0",
     # Opcional, mas limpa a UI:
-    'SERVE_INCLUDE_SCHEMA': False,
+    "SERVE_INCLUDE_SCHEMA": False,
     # Isso ajuda o Swagger a entender uploads de arquivos
-    'COMPONENT_SPLIT_REQUEST': True,
+    "COMPONENT_SPLIT_REQUEST": True,
 }
