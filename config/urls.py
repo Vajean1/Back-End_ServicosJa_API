@@ -14,44 +14,53 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 from django.contrib import admin
+from django.conf import settings
 from django.urls import path, include
-from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from accounts.views import CustomTokenObtainPairView
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    
     # Rotas de Autenticação
     # O front-end vai fazer POST aqui para obter o token
-    path('api/auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('api/auth/token/login/', CustomTokenObtainPairView.as_view(), name='token_obtain_pair_login'),
-    #renovar token expirado.
-    path('api/auth/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path("api/auth/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path(
+        "api/auth/token/login/",
+        CustomTokenObtainPairView.as_view(),
+        name="token_obtain_pair_login",
+    ),
+    # renovar token expirado.
+    path("api/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     # Rotas de "login/logout" do DRF para teste.
-    path('api-auth/', include('rest_framework.urls')),
-
-    #Rotas do accounts apps
-    #Accounts
-    path('api/accounts/', include('accounts.urls')),
-    #Servicos
-    path('api/servicos/', include('servicos.urls')),
-    #contratações
-    path('api/contratacoes/', include('contratacoes.urls')),
-    #Avaliações
-    path('api/avaliacoes/', include('avaliacoes.urls')),
-    #Portfólio
-    path('api/portfolio/', include('portfolio.urls')),
-    
-
+    path("api-auth/", include("rest_framework.urls")),
+    # Rotas do accounts apps
+    # Accounts
+    path("api/accounts/", include("accounts.urls")),
+    # Servicos
+    path("api/servicos/", include("servicos.urls")),
+    # contratações
+    path("api/contratacoes/", include("contratacoes.urls")),
+    # Avaliações
+    path("api/avaliacoes/", include("avaliacoes.urls")),
+    # Portfólio
+    path("api/portfolio/", include("portfolio.urls")),
     # --- ROTAS DA DOCUMENTAÇÃO (SWAGGER) ---
-
     # A Rota 1 Gera o ficheiro "schema" da API
-    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
-
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
     # A Rota 2  A Interface Swagger UI
-    path('api/docs/', SpectacularSwaggerView.as_view(url_name='schema'), name='swagger-ui'),
-    
-    path('api/redoc/', SpectacularRedocView.as_view(url_name='schema'), name='redoc'),
+    path(
+        "api/docs/",
+        SpectacularSwaggerView.as_view(url_name="schema"),
+        name="swagger-ui",
+    ),
+    path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ]
+
+if settings.DEGUG:
+    urlpatterns += [path("admin/", admin.site.urls)]
