@@ -62,5 +62,5 @@ urlpatterns = [
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
 ]
 
-if settings.DEGUG:
+if settings.DEBUG:
     urlpatterns += [path("admin/", admin.site.urls)]
